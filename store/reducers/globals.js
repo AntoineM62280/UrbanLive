@@ -16,6 +16,13 @@ function globals(state = initialState, action) {
                 user: action.value
             }
         return nextState
+            
+        case 'UPDATE_LOCATION':
+            nextState = {
+                ...state,
+                location: action.value
+            }
+        return nextState
     }
 }
 
