@@ -1,3 +1,4 @@
+import React from "react";
 import {
 	StyleSheet,
 	View,
@@ -31,10 +32,8 @@ class NewEventScreen extends React.Component {
 			longitude: null,
 			latitude: null,
 			latitudeBis : null,
-			adressBis: this.props.navigation.getParam('adressBis', null),
 			loading: false
 		};
-		console.warn(this.state.adressBis)
 	}
 
 	static navigationOptions = ({ navigation, navigationOptions }) => {
@@ -95,10 +94,10 @@ class NewEventScreen extends React.Component {
 			});
 		}
 
-		let location = await Location.getCurrentPositionAsync({});
+		let locationBis = await Location.getCurrentPositionAsync({});
 
-		let latitude = location.coords.latitude;
-		let longitude = location.coords.longitude;
+		let latitude = locationBis.coords.latitude;
+		let longitude = locationBis.coords.longitude;
 
 		let locationDetails = await Location.reverseGeocodeAsync({
 			latitude: latitude,
@@ -107,6 +106,29 @@ class NewEventScreen extends React.Component {
 		this.setState({ location: locationDetails });
 		this.setState({ longitude: longitude });
 		this.setState({ latitude: latitude });
+
+		let text = "Waiting..";
+		if (
+			this.state.location == null &&
+			this.state.errorMessage == null
+		) {
+			text = "Waiting...";
+		} else if (this.state.errorMessage) {
+			text = this.state.errorMessage;
+		} else {
+			text = this.state.location[0].country;
+		}
+
+		this.setState({adress : text});
+
+		let location = {latitude : this.state.latitude, longitude : this.state.longitude, adress : this.state.adress};
+		console.warn(location);
+		let action_add_location = {
+			type: "UPDATE_LOCATION",
+			value: location
+		};
+		this.props.dispatch(action_add_location);
+		console.warn("add new user", this.props.location);
 	};
 
 	askPermissionsAsync = async () => {
@@ -134,9 +156,9 @@ class NewEventScreen extends React.Component {
 			category: this.state.category,
 			userId: this.props.user[0].UserId,
 			damageCategory: this.props.navigation.getParam("damageCategory"),
-			longitude: this.state.longitude,
-			latitude: this.state.latitude,
-			writtenAdress: this.state.adress
+			longitude: this.props.location.longitude,
+			latitude: this.props.location.latitude,
+			writtenAdress: this.props.location.adress
 		})
 			.then(data => {
 				//await AsyncStorage.setItem("token", json.token);
@@ -154,6 +176,8 @@ class NewEventScreen extends React.Component {
 					comment: "",
 					imageUri: null
 				});
+
+				console.warn('johinyh', this.props.location)
 
 				this.props.navigation.navigate("EventConfirmation");
 			})
@@ -230,25 +254,6 @@ class NewEventScreen extends React.Component {
 	};
 
 	render() {
-		let adressBis = this.props.navigation.getParam("adressBis") || null;
-		let longitudeBis = this.props.navigation.getParam("longitudeBis") || null;
-		let latitudeBis = this.props.navigation.getParam("latitudeBis") || null;
-
-		let text = "Waiting..";
-		if (
-			this.state.location == null &&
-			adressBis == null &&
-			this.state.errorMessage == null
-		) {
-			text = "Waiting...";
-		} else if (this.state.errorMessage) {
-			text = this.state.errorMessage;
-		} else if (adressBis == null && this.state.location) {
-			text = this.state.location[0].country;
-		} else {
-			text = adressBis;
-		}
-
 		const damageCategory = this.props.navigation.getParam("damageCategory");
 		const { params } = this.props.navigation.state;
 
@@ -275,7 +280,7 @@ class NewEventScreen extends React.Component {
 							<Text style={styles.buttonText}>Changez</Text>
 						</View>
 					</TouchableHighlight>
-					<Text style={styles.paragraph}>{text}</Text>
+					<Text style={styles.paragraph}>{this.props.location.adress}</Text>
 				</View>
 				<View style={styles.locationContainer}>
 					<View style={styles.newEventFormTitles}>
