@@ -1,8 +1,6 @@
-import React from "react";
 import {
 	StyleSheet,
 	View,
-	Button,
 	Image,
 	AsyncStorage,
 	TextInput,
@@ -18,7 +16,7 @@ import { NavigationActions } from "react-navigation";
 import { connect } from "react-redux";
 import { Loader } from "../../components/Loader";
 import NewEvent from "../../utils/API/NewEvent";
-
+import Colors from "../../constants/Colors";
 
 class NewEventScreen extends React.Component {
 	constructor(props) {
@@ -32,8 +30,11 @@ class NewEventScreen extends React.Component {
 			imageUri: null,
 			longitude: null,
 			latitude: null,
+			latitudeBis : null,
+			adressBis: this.props.navigation.getParam('adressBis', null),
 			loading: false
 		};
+		console.warn(this.state.adressBis)
 	}
 
 	static navigationOptions = ({ navigation, navigationOptions }) => {
@@ -52,11 +53,21 @@ class NewEventScreen extends React.Component {
 				</TouchableHighlight>
 			),
 			headerStyle: {
-				backgroundColor: "#EA7500"
+				backgroundColor: "white",
+				borderBottomWidth: 0,
+				shadowColor: "#000",
+				shadowOffset: {
+					width: 0,
+					height: 2
+				},
+				shadowOpacity: 0.25,
+				shadowRadius: 3.84,
+				elevation: 5,
+				borderRadius: 5
 			},
 			headerTitleStyle: {
 				fontWeight: "bold",
-				color: "white"
+				color: Colors.textColor
 			}
 		};
 	};
@@ -70,10 +81,6 @@ class NewEventScreen extends React.Component {
 		} else {
 			this._getLocationAsync();
 		}
-	}
-
-	componentWillReceiveProps(nextProps) {
-		console.warn("events bis", nextProps);
 	}
 
 	componentDidMount() {
@@ -93,35 +100,14 @@ class NewEventScreen extends React.Component {
 		let latitude = location.coords.latitude;
 		let longitude = location.coords.longitude;
 
-		this.setState({ longitude: longitude });
-		this.setState({ latitude: latitude });
-
 		let locationDetails = await Location.reverseGeocodeAsync({
 			latitude: latitude,
 			longitude: longitude
 		});
-
-		console.warn(locationDetails);
-
-		this.setState({ locationDetails });
-		let text = "Waiting..";
-		if (this.state.errorMessage) {
-			text = this.state.errorMessage;
-		} else if (this.state.locationDetails) {
-			text =
-				this.state.locationDetails[0].name +
-				", " +
-				this.state.locationDetails[0].city +
-				", " +
-				this.state.locationDetails[0].postalCode +
-				", " +
-				this.state.locationDetails[0].country;
-		}
-		this.setState({ adress: text });
+		this.setState({ location: locationDetails });
+		this.setState({ longitude: longitude });
+		this.setState({ latitude: latitude });
 	};
-	_searchTextInputChanged(text) {
-		this.setState({ comment: text });
-	}
 
 	askPermissionsAsync = async () => {
 		await Permissions.askAsync(Permissions.CAMERA);
@@ -145,26 +131,31 @@ class NewEventScreen extends React.Component {
 		NewEvent({
 			path: this.state.imageUri,
 			comment: this.state.comment,
-			longitude: this.state.longitude,
-			latitude: this.state.latitude,
 			category: this.state.category,
 			userId: this.props.user[0].UserId,
-			damageCategory: this.props.navigation.getParam(
-				"damageCategory"
-			),
+			damageCategory: this.props.navigation.getParam("damageCategory"),
+			longitude: this.state.longitude,
+			latitude: this.state.latitude,
 			writtenAdress: this.state.adress
 		})
 			.then(data => {
-						//await AsyncStorage.setItem("token", json.token);
-						console.warn('arrête',data.event)
-						let event = data.event;
-						let events = this.props.events.concat(event);
-						let action_add_event = {
-							type: "UPDATE_EVENTS",
-							value: events
-						};
-						this.props.dispatch(action_add_event);
-						console.warn("add new user", this.props.events);
+				//await AsyncStorage.setItem("token", json.token);
+				console.warn("arrête", data.event);
+				let event = data.event;
+				let events = this.props.events.concat(event);
+				let action_add_event = {
+					type: "UPDATE_EVENTS",
+					value: events
+				};
+				this.props.dispatch(action_add_event);
+				console.warn("add new user", this.props.events);
+
+				this.setState({
+					comment: "",
+					imageUri: null
+				});
+
+				this.props.navigation.navigate("EventConfirmation");
 			})
 			.catch(resp => {
 				this.setState({
@@ -207,12 +198,7 @@ class NewEventScreen extends React.Component {
 			return (
 				<TouchableHighlight
 					onPress={this.useCameraHandler}
-					style={{
-						width: "100%",
-						alignItems: "center",
-						marginTop: 3,
-						backgroundColor: "#F0F0F0"
-					}}
+					style={styles.cameraTouchableHighLight}
 				>
 					<View
 						style={{
@@ -225,8 +211,10 @@ class NewEventScreen extends React.Component {
 							backgroundColor: "white"
 						}}
 					>
-						<Image source={require("../../assets/icon/photo.png")} />
-						<Text style={{ fontWeight: "bold" }}>
+						<Image
+							source={require("../../assets/icon/photo.png")}
+						/>
+						<Text style={styles.textUserInfo}>
 							{" "}
 							Cliquez ici pour prendre une photo
 						</Text>
@@ -242,33 +230,33 @@ class NewEventScreen extends React.Component {
 	};
 
 	render() {
+		let adressBis = this.props.navigation.getParam("adressBis") || null;
+		let longitudeBis = this.props.navigation.getParam("longitudeBis") || null;
+		let latitudeBis = this.props.navigation.getParam("latitudeBis") || null;
+
 		let text = "Waiting..";
-		if (this.state.errorMessage) {
+		if (
+			this.state.location == null &&
+			adressBis == null &&
+			this.state.errorMessage == null
+		) {
+			text = "Waiting...";
+		} else if (this.state.errorMessage) {
 			text = this.state.errorMessage;
-		} else if (this.state.locationDetails) {
-			text =
-				this.state.locationDetails[0].name +
-				", " +
-				this.state.locationDetails[0].city +
-				", " +
-				this.state.locationDetails[0].postalCode +
-				", " +
-				this.state.locationDetails[0].country;
+		} else if (adressBis == null && this.state.location) {
+			text = this.state.location[0].country;
+		} else {
+			text = adressBis;
 		}
 
 		const damageCategory = this.props.navigation.getParam("damageCategory");
 		const { params } = this.props.navigation.state;
-		console.warn('RRRRRR', this.props.user[0].UserId)
 
 		return this.state.loading ? (
 			<Loader />
 		) : (
 			<ScrollView style={styles.container}>
-				<View style={styles.locationContainer}>
-					<View style={styles.CameraContainer}>
-						{this.renderElement()}
-					</View>
-				</View>
+				{this.renderElement()}
 				<View style={styles.locationContainer}>
 					<View style={styles.newEventFormTitles}>
 						<Image
@@ -277,7 +265,17 @@ class NewEventScreen extends React.Component {
 						/>
 						<Text style={styles.textUserInfo}>Adresse</Text>
 					</View>
-					<Text style={styles.paragraph}>{this.state.adress}</Text>
+					<TouchableHighlight
+						style={styles.touchableHighlight2}
+						onPress={() => {
+							this.props.navigation.navigate("Map");
+						}}
+					>
+						<View style={styles.buttonContainer1}>
+							<Text style={styles.buttonText}>Changez</Text>
+						</View>
+					</TouchableHighlight>
+					<Text style={styles.paragraph}>{text}</Text>
 				</View>
 				<View style={styles.locationContainer}>
 					<View style={styles.newEventFormTitles}>
@@ -314,29 +312,13 @@ class NewEventScreen extends React.Component {
 				</View>
 				<View style={styles.locationContainer2}>
 					<TouchableHighlight
+						underlayColor={Colors.lightBlue}
+						style={styles.touchableHighlight}
 						onPress={() => {
 							this.save();
-							this.setState({
-								comment: "",
-								imageUri: null
-							});
-
-							this.props.navigation.navigate("EventConfirmation");
-						}}
-						style={{
-							width: 250,
-							backgroundColor: "#F0F0F0",
-							marginTop: 15,
-							borderRadius: 10
 						}}
 					>
-						<View style={styles.buttonContainer}>
-							<Text
-								style={{ color: "white", fontWeight: "bold" }}
-							>
-								Enregistrez
-							</Text>
-						</View>
+						<Text style={styles.buttonText}>Enregistrez</Text>
 					</TouchableHighlight>
 				</View>
 			</ScrollView>
@@ -347,20 +329,22 @@ class NewEventScreen extends React.Component {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#F0F0F0"
+		backgroundColor: Colors.background
 	},
 
 	textInput: {
 		height: 150,
 		borderWidth: 1,
-		borderColor: "#F0F0F0",
+		borderColor: Colors.borderInput,
 		justifyContent: "flex-start",
-		padding: 10
+		padding: 10,
+		borderRadius: 5
 	},
 
 	textUserInfo: {
 		marginLeft: 10,
-		fontWeight: "bold"
+		fontWeight: "bold",
+		color: Colors.textColor
 	},
 
 	locationContainer: {
@@ -394,13 +378,47 @@ const styles = StyleSheet.create({
 	input: {
 		height: 40
 	},
-	buttonContainer: {
-		width: "100%",
+
+	paragraph: {
+		color: Colors.textColor
+	},
+
+	buttonText: {
+		color: "white",
+		fontWeight: "bold"
+	},
+
+	touchableHighlight: {
+		marginTop: 15,
+		borderRadius: 10,
+		width: 250,
 		borderRadius: 40,
-		backgroundColor: "#EB008D",
+		backgroundColor: Colors.mainBlue,
 		justifyContent: "center",
 		alignItems: "center",
 		height: 50
+	},
+	cameraTouchableHighLight: {
+		width: "100%",
+		alignItems: "center",
+		marginTop: 3,
+		backgroundColor: "#F0F0F0",
+		marginBottom: 4
+	},
+	touchableHighlight2: {
+		width: 100,
+		marginBottom: 20,
+		marginTop: 20,
+		height: 30,
+		borderRadius: 40
+	},
+
+	buttonContainer1: {
+		backgroundColor: Colors.orange,
+		justifyContent: "center",
+		alignItems: "center",
+		borderRadius: 40,
+		height: 30
 	}
 });
 
