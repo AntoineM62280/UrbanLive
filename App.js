@@ -37,6 +37,12 @@ export default class App extends React.Component {
 			value: Store.user || []
 		};
 		Store.dispatch(action_add_user);
+		
+		let action_add_location = {
+			type: "UPDATE_LOCATION",
+			value: Store.location || []
+		};
+		Store.dispatch(action_add_location);
 	}
 
 	_handleLoadingError = error => {
