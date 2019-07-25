@@ -23,7 +23,7 @@ import Colors from "../../constants/Colors";
 import MapView from "react-native-maps";
 
 const latitudeDelta = 4;
-const longitudeDelta = 4
+const longitudeDelta = 4;
 
 class Map extends React.Component {
 	state = {
@@ -33,7 +33,7 @@ class Map extends React.Component {
 			latitude: 50,
 			longitude: 2
 		},
-		adress : ''
+		adress: ""
 	};
 
 	onRegionChange = region => {
@@ -42,33 +42,19 @@ class Map extends React.Component {
 		});
 	};
 
-
 	_getLocationAsync = async () => {
-
 		let locationDetails = await Location.reverseGeocodeAsync({
 			latitude: this.state.region.latitude,
 			longitude: this.state.region.longitude
 		});
 
-		let text = "Waiting..";
-		if (this.state.errorMessage) {
-			text = this.state.errorMessage;
-		} else if (locationDetails) {
-			text =
-				locationDetails[0].name +
-				", " +
-				locationDetails[0].city
-		}
-		this.setState({adress: text});
+		let text = locationDetails[0].name + ", " + locationDetails[0].city;
 
-		this.props.navigation.navigate('NewEvent', {
-			adressBis : this.state.adress,
-			latitudeBis : this.state.region.latitude,
-			longitudeBis : this.state.region.longitude
-		});
+		this.setState({ adress: text });
+		console.warn('dieu merci' ,this.state.adress)
 
+		this.props.navigation.navigate("NewEvent");
 	};
-
 
 	render() {
 		const { region } = this.state;
@@ -89,17 +75,26 @@ class Map extends React.Component {
 				</View>
 				<SafeAreaView style={styles.footer}>
 					<TouchableHighlight
-						underlayColor = {Colors.lightBlue}
+						underlayColor={Colors.lightBlue}
 						style={styles.touchableHighlight}
 						onPress={() => {
-							this._getLocationAsync()
+							this._getLocationAsync();
+
+							let location = {
+								latitude: this.state.region.latitude,
+								longitude: this.state.region.longitude,
+								adress: this.state.adress
+							};
+							console.warn(location);
+							let action_add_location = {
+								type: "UPDATE_LOCATION",
+								value: location
+							};
+							this.props.dispatch(action_add_location);
+							console.warn("add new user", this.props.location);
 						}}
 					>
-						<Text
-							style={styles.buttonText}
-						>
-							Enregistrez
-						</Text>
+						<Text style={styles.buttonText}>Enregistrez</Text>
 					</TouchableHighlight>
 				</SafeAreaView>
 			</View>
@@ -127,8 +122,8 @@ var styles = StyleSheet.create({
 		bottom: 10,
 		position: "absolute",
 		width: "100%",
-		justifyContent: 'center',
-		alignItems:'center'
+		justifyContent: "center",
+		alignItems: "center"
 	},
 	region: {
 		color: "#fff",
@@ -140,7 +135,7 @@ var styles = StyleSheet.create({
 		fontWeight: "bold"
 	},
 
-	touchableHighlight : {
+	touchableHighlight: {
 		marginTop: 15,
 		borderRadius: 10,
 		width: 250,
@@ -148,8 +143,12 @@ var styles = StyleSheet.create({
 		backgroundColor: Colors.mainBlue,
 		justifyContent: "center",
 		alignItems: "center",
-		height: 50,
+		height: 50
 	}
 });
 
-export default Map;
+const mapStateToProps = state => {
+	return state;
+};
+
+export default connect(mapStateToProps)(Map);
