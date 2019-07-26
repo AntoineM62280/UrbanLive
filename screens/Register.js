@@ -18,6 +18,9 @@ import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { Loader } from "../components/Loader";
 import CreateUser from "../utils/API/CreateUser";
+import Colors from '../constants/Colors';
+import { connect } from "react-redux";
+
 
 class Register extends React.Component {
 	constructor(props) {
@@ -30,6 +33,7 @@ class Register extends React.Component {
 				lastname: "",
 				email: "",
 				password: "",
+				password2 : "",
 				postalCode: ""
 			},
 			formErrors: {
@@ -88,9 +92,17 @@ class Register extends React.Component {
 		});
 		CreateUser(this.state.formFields)
 			.then(data => {
-				console.warn("data", data.token)
-				AsyncStorage.setItem('token', JSON.stringify(data.token))
-				this.props.navigation.navigate("History");
+				let user = data.user[0];
+				AsyncStorage.setItem("token", user.Token);
+				let action_add_user = {
+					type: "UPDATE_USER",
+					value: user
+				};
+				this.props.dispatch(action_add_user);
+				this.setState({
+					loading: false
+				});
+				this.props.navigation.navigate('History')
 			})
 			.catch(err => {
 				console.warn(err);
@@ -115,7 +127,7 @@ class Register extends React.Component {
 			),
 			/* These values are used instead of the shared configuration! */
 			headerStyle: {
-				backgroundColor: "#EA7500"
+				backgroundColor: Colors.mainBlue
 			},
 			headerTitleStyle: {
 				fontWeight: "bold",
@@ -130,16 +142,13 @@ class Register extends React.Component {
 		) : (
 			<ScrollView style={styles.scroll}>
 				<View style={styles.container}>
-					<Text style={styles.registerMainTitle}>S'inscrire</Text>
 					<View style={styles.subcontainer}>
-						<Text style={styles.subcontainerTitle}>
-							Nom et Prénom
-						</Text>
 						<View style={styles.identitySubcontainerInput}>
 							<Input
 								style={styles.input1}
 								label="Prénom"
 								name="firstname"
+								placeholder = {'Prénom'}
 								editable={true}
 								onChangeText={this.handleChange}
 							/>
@@ -147,55 +156,52 @@ class Register extends React.Component {
 								style={styles.input2}
 								label="Nom"
 								name="lastname"
+								placeholder = {'Nom'}
 								editable={true}
 								onChangeText={this.handleChange}
 							/>
 						</View>
 					</View>
 					<View style={styles.subcontainer}>
-						<Text style={styles.subcontainerTitle}>
-							Adresse mail
-						</Text>
 						<Input
 							style={styles.input}
 							label="Adress Mail"
 							name="email"
+							placeholder = {'ex : antoine.salveri@gmail.com'}
 							editable={true}
 							onChangeText={this.handleChange}
 						/>
 					</View>
 					<View style={styles.subcontainer}>
-						<Text style={styles.subcontainerTitle}>
-							Code Postal
-						</Text>
 						<Input
 							style={styles.input}
 							label="Code Postal"
 							name="postalCode"
 							editable={true}
 							onChangeText={this.handleChange}
+							keyboardType={'numeric'}
+							placeholder={'ex : 62280'}
 						/>
 					</View>
 					<View style={styles.subcontainer}>
-						<Text style={styles.subcontainerTitle}>
-							Mot de passe
-						</Text>
 						<Input
 							style={styles.input}
 							label="Mot de Passe"
+							placeholder = {'Mot de Passe'}
 							name="password"
+							secureTextEntry={true}
 							editable={true}
 							onChangeText={this.handleChange}
 						/>
 					</View>
 					<View style={styles.subcontainer}>
-						<Text style={styles.subcontainerTitle}>
-							Confirmation du mot de passe
-						</Text>
 						<Input
 							style={styles.input}
-							placeholder="Confirmation du mot de passe"
+							label="Confirmation du mot de passe"
+							placeholder = {'Confirmation du mot de passe'}
+							name="password"
 							editable={true}
+							onChangeText={this.handleChange}
 						/>
 					</View>
 					<View></View>
@@ -219,7 +225,6 @@ var styles = StyleSheet.create({
 		flex: 1,
 		alignItems: "center",
 		paddingTop: 20,
-		backgroundColor: "#F0F0F0",
 		paddingBottom: 20,
 		marginLeft: 20,
 		marginRight: 20,
@@ -241,17 +246,19 @@ var styles = StyleSheet.create({
 	},
 
 	input: {
-		borderColor: "#0075eb",
 		borderWidth: 1,
+		borderRadius : 5,
 		height: 30,
 		paddingLeft: 10,
 		paddingRight: 10,
 		width: 250,
-		backgroundColor: "white"
+		backgroundColor: "white",
+		borderColor : Colors.borderInput
 	},
 	input1: {
 		width: 120,
-		borderColor: "#0075eb",
+		borderRadius : 5,
+		borderColor : Colors.borderInput,
 		borderWidth: 1,
 		height: 30,
 		paddingLeft: 10,
@@ -262,7 +269,8 @@ var styles = StyleSheet.create({
 
 	input2: {
 		width: 120,
-		borderColor: "#0075eb",
+		borderRadius : 5,
+		borderColor : Colors.borderInput,
 		borderWidth: 1,
 		height: 30,
 		paddingLeft: 10,
@@ -281,8 +289,13 @@ var styles = StyleSheet.create({
 	registerMainTitle: {
 		fontWeight: "bold",
 		fontSize: 25,
-		marginBottom: 20
+		marginBottom: 20,
+		color : Colors.textColor,
 	}
 });
 
-export default Register;
+const mapStateToProps = state => {
+	return state;
+};
+
+export default connect(mapStateToProps)(Register);
